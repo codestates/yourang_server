@@ -4,7 +4,7 @@ import express from "express";
 const app = express()
 
 app.listen(8080, ()=>{
-  console.log('App runing at http://localhost8080')
+  console.log('DB connecting');
   sequlize.authenticate().then( async ()=>{
     console.log("database connected");
     try{

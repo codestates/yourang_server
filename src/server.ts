@@ -3,7 +3,7 @@ import {readFileSync} from 'fs';
 import {createServer} from 'https';
 import {app} from './app';
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT;
 const cert = readFileSync('../auth/cert.pem','utf-8');
 const key = readFileSync('../auth/key.pem','utf-8');
 
