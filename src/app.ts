@@ -1,9 +1,10 @@
 import express from "express";
 import cors from 'cors';
 import logger from 'morgan';
+import router from "./routes"
 
-export const app = express();
 
+const app:express.Application = express();
 
 app.use(logger('dev'))
 app.use(express.json());
@@ -17,4 +18,12 @@ const corsOption : object ={
 }
 
 app.use(cors(corsOption));
-app.get("/",(req,res)=>res.send("Hi from Server!"));
+
+app.use("/user",router.user.router);
+app.use("/schedule",router.schedule.router);
+app.use("/category",router.category.router);
+app.use("/plan",router.plan.router);
+app.use("/book",router.bookmark.router);
+app.use("/place",router.place.router);
+
+export default app;
