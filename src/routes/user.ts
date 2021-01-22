@@ -8,7 +8,7 @@ router.post("/login",api.logIn);
 //POST user/logout
 router.post("/logout",api.logOut);
 //POST user/signup
-router.post("/sugnup",api.signUp);
+router.post("/signup",api.signUp);
 //POST user/modify
 router.post("/modify",api.modifyUserInfo);
 //GET user/info

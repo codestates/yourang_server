@@ -1,4 +1,4 @@
-import {sequlize} from "./database";
+import sequlize from "./database";
 import express from "express";
 
 const app = express()

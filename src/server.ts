@@ -3,6 +3,7 @@ dotenv.config();
 import {createServer} from 'https';
 import app from "./app";
 import {readFileSync} from "fs";
+import sequelize from "./db/database"
 
 
 const PORT = process.env.PORT;
@@ -15,6 +16,7 @@ const httpsServer = createServer(
         }
         ,app
     ).listen(PORT,()=>{
+        sequelize.authenticate();
         console.log(`[Server] : Server is running at https://localhost:${PORT}`);
     });
 
