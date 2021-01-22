@@ -1,0 +1,52 @@
+{
+   "name": "yourang_server",
+   "version": "1.0.0",
+   "description": "",
+   "main": "index.ts",
+   "scripts": {
+      "tsc": "tsc",
+      "test": "echo \"Error: no test specified\" && exit 1",
+      "start": "nodemon --require ts-node index.ts",
+      "db-test": "nodemon ./src/db/app.ts"
+   },
+   "repository": {
+      "type": "git",
+      "url": "git+https://github.com/Ukhwan/yourang_server.git"
+   },
+   "author": "",
+   "license": "ISC",
+   "bugs": {
+      "url": "https://github.com/Ukhwan/yourang_server/issues"
+   },
+   "homepage": "https://github.com/Ukhwan/yourang_server#readme",
+   "devDependencies": {
+      "@types/bluebird": "^3.5.33",
+      "@types/cors": "^2.8.9",
+      "@types/express": "^4.17.11",
+      "@types/express-session": "^1.17.3",
+      "@types/morgan": "^1.9.2",
+      "@types/node": "^8.0.29",
+      "@types/validator": "^13.1.3",
+      "nodemon": "^2.0.7",
+      "ts-node": "3.3.0",
+      "tslint": "^6.1.3",
+      "typescript": "3.3.3333"
+   },
+   "dependencies": {
+      "@types/jsonwebtoken": "^8.5.0",
+      "axios": "^0.21.1",
+      "cors": "^2.8.5",
+      "dotenv": "^8.2.0",
+      "express": "^4.17.1",
+      "express-session": "^1.17.1",
+      "https": "^1.0.0",
+      "jsonwebtoken": "^8.5.1",
+      "morgan": "^1.10.0",
+      "mysql2": "^2.2.5",
+      "reflect-metadata": "^0.1.10",
+      "request": "^2.88.2",
+      "sequelize": "^6.3.5",
+      "sequelize-typescript": "^2.0.0",
+      "ts-node-dev": "^1.1.1"
+   }
+}
