@@ -24,4 +24,5 @@ export default class Category extends Model implements Category1{
         foreignKey:"category_Id"
     })
     places!: Places[];
+    
 }

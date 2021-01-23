@@ -1,10 +1,10 @@
 import axios from "axios";
 import express from "express";
 import user from "../db/models/user";
-const jwt = require("jsonwebtoken");
-
+import JWT from "./jwt";
+const {Op} = require("sequelize");
 export class UserController {
-    
+    private jwt = new JWT();
     private now:Date = new Date();
     private date:string = this.now.getFullYear()+"-"+
                     (this.now.getMonth()+1)+"-"+
@@ -12,28 +12,36 @@ export class UserController {
                     this.now.getHours()+":"+
                     this.now.getMinutes()+":"+
                     this.now.getSeconds();
-    public getAccessToken:Function = (userInfo)=>{
-        const access_token = jwt.sign({
-            id:userInfo.id,
-            userId:userInfo.userId,
-            email:userInfo.email,
-            phone:userInfo.phone
-        },process.env.ACCESS_SECRET,{expiresIn:"1days"});
+    public checkTest:Function = async(req:express.Request,res:express.Response)=>{
+        const {body} = req;
         
-        return access_token;
+        if(body.userId){
+            await user.findOne({
+                where:{
+                    user_id:body.userId
+                }
+            }).then((data)=>{
+                res.status(200);
+                (data)?res.send(false):res.send(true);
+            }).catch(err=>{
+                res.status(404).send(err);
+            })
+            return;
+        }else if(body.email){
+            await user.findOne({
+                where:{
+                    email:body.email
+                }
+            }).then(data=>{
+                res.status(200);                
+                (data)?res.send(false):res.send(true);
+            }).catch(err=>{
+                res.status(404).send(err);
+            })
+            return;
+        }
     }
-    public getRefreshToken:Function = (userInfo)=>{
-        
-        const refresh_token = jwt.sign({
-            id:userInfo.id,
-            userId:userInfo.userId,
-            email:userInfo.email,
-            phone:userInfo.phone
-        },process.env.REFRESH_SECRET,{expiresIn:"2days"});
-        return refresh_token;
-    }
-
-    public logIn:Function = async (req:express.Request,res:express.Response):Promise<any>=>{
+    public logIn:Function = async (req:express.Request,res:express.Response)=>{
         
         let userInfo
         await user.findOne({
@@ -49,9 +57,9 @@ export class UserController {
         
         if(!userInfo){
             res.status(400).send({data:null,message:"Invaild ID or Password"});
-        }else{            
-            const access_token = this.getAccessToken(userInfo);
-            const refresh_token = this.getRefreshToken(userInfo);
+        }else{
+            const access_token = this.jwt.getAccessToken(userInfo);
+            const refresh_token = this.jwt.getRefreshToken(userInfo);
             res.cookie('refreshToken',refresh_token,{
                 httpOnly:true,
                 secure:true,
@@ -67,10 +75,10 @@ export class UserController {
     public logOut:Function = async (req:express.Request,res:express.Response)=>{
         const authorization = req.body.authorization;
         
-        (authorization)?res.cookie('maxAge',0):
-            
+        if(authorization){
+            res.cookie('maxAge',0)
+        }
         res.status(200).send("Logout Success");
-        
         return;
     }
 
@@ -89,12 +97,9 @@ export class UserController {
 
     public getUserInfo:Function = async (req:express.Request,res:express.Response)=>{
         const authorization = req.body.authorization;
-        if(authorization){
-            jwt.verify(authorization,process.env.ACCESS_SECRET,
-                async (err,decoded)=>{
-                    err?res.status(403).send(err):res.status(200).send(decoded);
-                }
-            );
+        if(authorization){            
+            let userInfo = this.jwt.Verify(authorization);
+            res.status(200).send(userInfo);
         }else{
             res.status(404).redirect("")
         }
@@ -105,10 +110,8 @@ export class UserController {
         const {body}=req
         let flag;
         if(body.authorization){
-            let id;
-            await jwt.verify(body.authorization,process.env.ACCESS_SECRET,(err,decoded)=>{
-                id=decoded.id
-            });
+            let id = this.jwt.Verify(body.authorization).id;
+            console.log(id)
             if(body.password){
                 flag = await user.update({
                     password:body.password,
@@ -139,8 +142,8 @@ export class UserController {
                     }
                 })
                 .then( (data)=>{
-                    const access_token = this.getAccessToken(data);
-                    const refresh_token = this.getRefreshToken(data);
+                    const access_token = this.jwt.getAccessToken(data);
+                    const refresh_token = this.jwt.getRefreshToken(data);
                     res.cookie('refreshToken',refresh_token,{
                         httpOnly:true,
                         secure:true,

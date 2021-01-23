@@ -20,7 +20,6 @@ const corsOption : object ={
 app.use(cors(corsOption));
 app.use(express.json());
 app.use("/user",router.user.router);
-app.use("/schedule",router.schedule.router);
 app.use("/category",router.category.router);
 app.use("/plan",router.plan.router);
 app.use("/book",router.bookmark.router);

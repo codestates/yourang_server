@@ -11,3 +11,5 @@ router.get("/list",api.getPlanList);
 router.get("/get",api.getPlan);
 //POST /plan/set
 router.post("/set",api.setPlan);
+//GET /plan/schedules
+router.get("/schedules",api.getSchedules);

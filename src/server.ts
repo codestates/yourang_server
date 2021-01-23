@@ -17,7 +17,7 @@ const httpsServer = createServer(
         ,app
     ).listen(PORT,()=>{
         sequelize.authenticate();
-        console.log(`[Server] : Server is running at https://localhost:${PORT}`);
+        console.log(`[Server] : Server is running at https://yourang-server.link:${PORT}`);
     });
 
 module.exports = httpsServer;

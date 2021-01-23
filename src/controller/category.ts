@@ -21,6 +21,11 @@ export class CategoryController {
     }
 
     public setCategory:Function = async(req:express.Request,res:express.Response)=>{
-        return res.status(200).send("성공")
+        await category.create({
+            category:req.body.category
+        })
+        .then(()=>res.status(200).send("Successfully create a category "))
+        .catch(err=>res.status(404).send(err));
+        return;
     }
 } 
