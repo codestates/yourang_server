@@ -6,6 +6,7 @@ export interface Schedule{
     id?: number|null
     planId:number
     placeId:number
+    order:number
     createdAt:Date
     updatedAt:Date
 }
@@ -30,6 +31,11 @@ export default class  Schedules extends Model implements Schedule{
     @NotEmpty
     @Column
     placeId!: number;
+
+    @AllowNull(false)
+    @NotEmpty
+    @Column
+    order!: number;
 
     @CreatedAt
     createdAt!: Date
