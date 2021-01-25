@@ -15,5 +15,7 @@ router.post("/modify",api.modifyUserInfo);
 router.get("/info",api.getUserInfo);
 //POST user/withdraw
 router.post("/withdraw",api.withdraw);
-//POST uer/check
-router.post("/check",api.checkTest);
+//POST user/check_id
+router.post("/check_id",api.checkId);
+//POST user/check_email
+router.post("/check_email",api.checkEmail);

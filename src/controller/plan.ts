@@ -62,7 +62,7 @@ export class PlanController {
     //세부일정들 가져오기 = 계획보기
     public getSchedules:Function = async (req:express.Request,res:express.Response)=>{
         if(!req.body.authorization){
-            res.status(400).redirect("")
+            res.redirect("https://localhost:3000/main")
         }else{
             await schedule.findAll({
                 where:{
@@ -74,7 +74,6 @@ export class PlanController {
                 data.forEach(el=>{
                     planIdList.push(el.placeId)
                 })
-                console.log(planIdList)
                 res.send(200)
             });
         }

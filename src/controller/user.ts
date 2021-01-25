@@ -12,35 +12,7 @@ export class UserController {
                     this.now.getHours()+":"+
                     this.now.getMinutes()+":"+
                     this.now.getSeconds();
-    public checkTest:Function = async(req:express.Request,res:express.Response)=>{
-        const {body} = req;
-        
-        if(body.userId){
-            await user.findOne({
-                where:{
-                    user_id:body.userId
-                }
-            }).then((data)=>{
-                res.status(200);
-                (data)?res.send(false):res.send(true);
-            }).catch(err=>{
-                res.status(404).send(err);
-            })
-            return;
-        }else if(body.email){
-            await user.findOne({
-                where:{
-                    email:body.email
-                }
-            }).then(data=>{
-                res.status(200);                
-                (data)?res.send(false):res.send(true);
-            }).catch(err=>{
-                res.status(404).send(err);
-            })
-            return;
-        }
-    }
+    
     public logIn:Function = async (req:express.Request,res:express.Response)=>{
         
         let userInfo
@@ -53,11 +25,9 @@ export class UserController {
         .then(data=>{
             userInfo=data
         })
-        .catch(err=>res.status(404).send({message:err}));
+        .catch(err=>res.status(400).json({message:"Invaild ID or Password",error:err}));
         
-        if(!userInfo){
-            res.status(400).send({data:null,message:"Invaild ID or Password"});
-        }else{
+        if(userInfo){
             const access_token = this.jwt.getAccessToken(userInfo);
             const refresh_token = this.jwt.getRefreshToken(userInfo);
             res.cookie('refreshToken',refresh_token,{
@@ -67,7 +37,7 @@ export class UserController {
                 domain:"localhost:3000",
                 maxAge: 24*6*60*10000
             });
-            res.status(200).send({data:{accessToken:access_token},message:"ok"});
+            res.status(200).json({data:{accessToken:access_token},message:"Login Successed"});
         }
         return;
     }
@@ -77,31 +47,34 @@ export class UserController {
         
         if(authorization){
             res.cookie('maxAge',0)
-        }
-        res.status(200).send("Logout Success");
+            res.status(200).json({message:"Logout Success"});
+        }else{
+            res.status(400).json({message:"Bad Request"})
+        }        
         return;
     }
 
     public signUp:Function = async (req:express.Request,res:express.Response)=>{
         const {body} = req;
         await user.create({
-            user_id : body.userId,
+            user_id : body.id,
             password : body.password,
             email : body.email,
             phone : body.phone,            
         })
-        .then(()=>res.status(200).send("Signup Successful"))
-        .catch((err)=>res.status(404).send("Failed to Signup"));
+        .then(()=>res.status(200).json({message:"Signup Success"}))
+        .catch((err)=>res.status(400).json({message:"Failed to Signup"}));
         return;
     }
 
     public getUserInfo:Function = async (req:express.Request,res:express.Response)=>{
         const authorization = req.body.authorization;
+        
         if(authorization){            
             let userInfo = this.jwt.Verify(authorization);
-            res.status(200).send(userInfo);
+            res.status(200).json({data:userInfo});
         }else{
-            res.status(404).redirect("")
+            res.redirect("https://localhost:3000/main");
         }
         return;
     }
@@ -110,8 +83,7 @@ export class UserController {
         const {body}=req
         let flag;
         if(body.authorization){
-            let id = this.jwt.Verify(body.authorization).id;
-            console.log(id)
+            let id = this.jwt.Verify(body.authorization).id;            
             if(body.password){
                 flag = await user.update({
                     password:body.password,
@@ -123,7 +95,7 @@ export class UserController {
                         id:id
                     }
                 })
-                .catch(err=>res.status(500).send(err));
+                .catch(err=>res.status(400).json({message:err}));
             }else{
                 flag = await user.update({
                     phone:body.phone,
@@ -134,6 +106,7 @@ export class UserController {
                         id:id
                     }
                 })
+                .catch(err=>res.status(400).json({message:err}))
             }
             if(flag[0]){
                 await user.findOne({
@@ -151,24 +124,57 @@ export class UserController {
                         domain:"localhost:3000",
                         maxAge: 24*6*60*10000
                     });
-                    res.status(200).send({data:{accessToken:access_token},message:"ok"});
-                    return;
+                    res.status(200).json({data:{accessToken:access_token},message:"Successfully Modify"});
+                    
                 });
             }
         }else{
-            res.status(404).send("Should Login");
-            return;
-        }        
+            res.status(401).json({message:"Unauthorized Token"});
+        }
+        return;
     }
     public withdraw:Function = async (req:express.Request,res:express.Response)=>{
-        await user.destroy({
-            where:{
-                user_id:req.body.user_id,
-                password:req.body.password
-            }
-        })
-        .then(()=>res.status(200).send("Withdraw Successful"))
-        .catch((err)=>res.status(400).send(err));
+        const {authorization,password} = req.body;
+        if(authorization){
+            const {user_id,id} = this.jwt.Verify(authorization);
+            await user.destroy({
+                where:{
+                    id:id,
+                    user_id:user_id,
+                    password:password
+                }
+            })
+            .then(()=>res.status(200).json({message:"Withdraw Successful"}))
+            .catch((err)=>res.status(400).json({message:err}));
+        }else{
+            res.redirect("https://localhost:3000/main");
+        }
+        
         return;
+    }
+
+    public checkId:Function = async(req:express.Request,res:express.Response)=>{
+        const {id} = req.body;
+        if(id){
+            await user.findOne({
+                where:{
+                    user_id:id
+                }
+            }).then(()=>res.status(202).json({result:true}))
+            .catch(()=>res.status(202).json({result:false}));
+        }
+        return;
+    }
+    public checkEmail:Function = async(req:express.Request,res:express.Response)=>{
+        const {email} = req.body
+        if(email){
+            await user.findOne({
+                where:{
+                    email:email
+                }
+            })
+            .then(()=>res.status(202).json({result:true}))
+            .catch(()=>res.status(202).json({result:false}));
+        }
     }
 }

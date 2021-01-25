@@ -24,5 +24,6 @@ app.use("/category",router.category.router);
 app.use("/plan",router.plan.router);
 app.use("/book",router.bookmark.router);
 app.use("/place",router.place.router);
+app.use("/google",router.google.router);
 
 export default app;

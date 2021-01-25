@@ -22,7 +22,8 @@ export default class JWTController{
             id:userInfo.id,
             userId:userInfo.userId,
             email:userInfo.email,
-            phone:userInfo.phone
+            phone:userInfo.phone,
+            updatedAt:userInfo.updatedAt
         },process.env.ACCESS_SECRET,{expiresIn:"1days"});
         return access_token;
     }
