@@ -3,7 +3,8 @@ export const index = {
     place: require("./place"),    
     my_plan:require("./plan"),
     category:require("./category"),
-    bookmarked_place:require("./bookMark")    
+    bookmarked_place:require("./bookMark"),
+    map:require("./mapSearch")
 };
 
 export default index
