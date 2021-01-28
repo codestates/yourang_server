@@ -2,9 +2,9 @@ import express from "express";
 import cors from 'cors';
 import logger from 'morgan';
 import router from "./routes"
-import axios from "axios";
 
 const app:express.Application = express();
+
 
 app.use(logger('dev'))
 app.use(express.json());

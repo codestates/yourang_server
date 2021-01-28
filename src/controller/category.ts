@@ -9,8 +9,7 @@ export class CategoryController {
                 id:req.body.id
             }
         })
-        .then(data=>{      
-            console.log(data)
+        .then(data=>{
             res.status(200).send(data);
             return ;
         })
