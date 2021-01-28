@@ -1,9 +1,11 @@
-import axios from "axios";
 import express from "express";
 import user from "../db/models/user";
-import JWT from "./jwt";
-const {Op} = require("sequelize");
+import bookmarked from "../db/models/bookmarked_place";
+import plan from "../db/models/my_plan"
+import JWT from "../common-middleware/auth";
+import Multer from "../common-middleware/multer";
 export class UserController {
+    private delete = new Multer().getDeletePhoto;
     private jwt = new JWT();
     private now:Date = new Date();
     private date:string = this.now.getFullYear()+"-"+
@@ -28,25 +30,22 @@ export class UserController {
         .catch(err=>res.status(400).json({message:"Invaild ID or Password",error:err}));
         
         if(userInfo){
-            const access_token = this.jwt.getAccessToken(userInfo);
             const refresh_token = this.jwt.getRefreshToken(userInfo);
-            res.cookie('refreshToken',refresh_token,{
-                httpOnly:true,
-                secure:true,
-                sameSite:'none',
-                domain:"localhost:3000",
-                maxAge: 24*6*60*10000
-            });
-            res.status(200).json({data:{accessToken:access_token},message:"Login Successed"});
+            res.setHeader("authorization",`Bearer ${refresh_token}`);
+            res.status(200).json({message:"Login Successed"});
+        }else{
+            res.status(400).json({message:"Invaild ID or Password"});
         }
         return;
     }
 
-    public logOut:Function = async (req:express.Request,res:express.Response)=>{
-        const authorization = req.body.authorization;
+    public logOut:Function = async (req:any,res:express.Response)=>{
+        
+        const authorization = req.headers.authorization.split(" ")[1];
         
         if(authorization){
-            res.cookie('maxAge',0)
+            res.flushHeaders
+            res.setHeader("authorization","");
             res.status(200).json({message:"Logout Success"});
         }else{
             res.status(400).json({message:"Bad Request"})
@@ -60,17 +59,18 @@ export class UserController {
             user_id : body.id,
             password : body.password,
             email : body.email,
-            phone : body.phone,            
+            photo : "src/image/photo.png",
+            phone : body.phone,
         })
         .then(()=>res.status(200).json({message:"Signup Success"}))
         .catch((err)=>res.status(400).json({message:"Failed to Signup"}));
         return;
     }
 
-    public getUserInfo:Function = async (req:express.Request,res:express.Response)=>{
-        const authorization = req.body.authorization;
+    public getUserInfo:Function = async (req:any,res:express.Response)=>{
+        const authorization = req.header.authorization.split(" ")[1];
         
-        if(authorization){            
+        if(authorization){
             let userInfo = this.jwt.Verify(authorization);
             res.status(200).json({data:userInfo});
         }else{
@@ -79,34 +79,52 @@ export class UserController {
         return;
     }
 
-    public modifyUserInfo:Function = async (req:express.Request,res:express.Response)=>{
-        const {body}=req
+    public modifyUserInfo:Function = async (req:any,res:express.Response)=>{
+        const {body,file}=req
+        const authorization = req.header.authorization.split(" ")[1];
         let flag;
-        if(body.authorization){
-            let id = this.jwt.Verify(body.authorization).id;            
+        if(authorization){
+            let id = this.jwt.Verify(authorization).id;
+            let originPhoto;
+            await user.findOne({
+                where:{
+                    id:id
+                }
+            })
+            .then((data:any)=>originPhoto=data.photo)
+            .catch(err=>res.status(404).json({message:err}));
+            
             if(body.password){
                 flag = await user.update({
                     password:body.password,
                     phone:body.phone,
                     email:body.email,
+                    photo:file.location,
                     updatedAt:this.date
                 },{
                     where:{
                         id:id
                     }
                 })
-                .catch(err=>res.status(400).json({message:err}));
+                .catch(err=>{
+                    this.delete(file.location);
+                    res.status(400).json({message:err});
+                });
             }else{
                 flag = await user.update({
                     phone:body.phone,
                     email:body.email,
+                    photo:file.location,
                     updatedAt:this.date
                 },{
                     where:{
                         id:id
                     }
                 })
-                .catch(err=>res.status(400).json({message:err}))
+                .catch(err=>{
+                    this.delete(file.location);
+                    res.status(400).json({message:err});
+                });
             }
             if(flag[0]){
                 await user.findOne({
@@ -115,8 +133,13 @@ export class UserController {
                     }
                 })
                 .then( (data)=>{
-                    const access_token = this.jwt.getAccessToken(data);
+                    //기존 프로필사진이 기본이미지가 아닐 때
+                    if(originPhoto!=="src/image/photo.png"){
+                        this.delete(originPhoto)
+                    }
+                    
                     const refresh_token = this.jwt.getRefreshToken(data);
+                    res.setHeader("authorization",`Bearer ${refresh_token}`);
                     res.cookie('refreshToken',refresh_token,{
                         httpOnly:true,
                         secure:true,
@@ -124,28 +147,32 @@ export class UserController {
                         domain:"localhost:3000",
                         maxAge: 24*6*60*10000
                     });
-                    res.status(200).json({data:{accessToken:access_token},message:"Successfully Modify"});
-                    
+                    res.status(200).json({message:"Successfully Modify"});
                 });
             }
         }else{
-            res.status(401).json({message:"Unauthorized Token"});
+            res.redirect("https://localhost:3000/main");
         }
         return;
     }
-    public withdraw:Function = async (req:express.Request,res:express.Response)=>{
-        const {authorization,password} = req.body;
+    public withdraw:Function = async (req:any,res:express.Response)=>{
+        const {password} = req.body;
+        const authorization = req.header.authorization.split(" ")[1];
         if(authorization){
-            const {user_id,id} = this.jwt.Verify(authorization);
+            const asd = this.jwt.Verify(authorization);
             await user.destroy({
                 where:{
-                    id:id,
-                    user_id:user_id,
+                    id:asd.id,
+                    user_id:asd.user_id,
                     password:password
                 }
             })
-            .then(()=>res.status(200).json({message:"Withdraw Successful"}))
+            .then(()=>{
+                res.cookie('maxAge',0);
+                res.status(200).json({message:"Withdraw Successful"})
+            })
             .catch((err)=>res.status(400).json({message:err}));
+            
         }else{
             res.redirect("https://localhost:3000/main");
         }
@@ -155,13 +182,15 @@ export class UserController {
 
     public checkId:Function = async(req:express.Request,res:express.Response)=>{
         const {id} = req.body;
+        
         if(id){
             await user.findOne({
                 where:{
                     user_id:id
                 }
-            }).then(()=>res.status(202).json({result:true}))
-            .catch(()=>res.status(202).json({result:false}));
+            })
+            .then((data)=>(data)?res.status(202).json({result:true}):res.status(202).json({result:false}))
+            .catch(err=>res.status(400).json({message:err}));
         }
         return;
     }
@@ -173,8 +202,9 @@ export class UserController {
                     email:email
                 }
             })
-            .then(()=>res.status(202).json({result:true}))
-            .catch(()=>res.status(202).json({result:false}));
+            .then((data)=>(data)?res.status(202).json({result:true}):res.status(202).json({result:false}))
+            .catch(err=>res.status(400).json({message:err}));
         }
+        return;
     }
 }

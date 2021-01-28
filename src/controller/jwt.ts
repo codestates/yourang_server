@@ -1,40 +1,36 @@
-const jwt = require("jsonwebtoken");
+import express from "express";
+import {config} from 'dotenv';
+import JWT  from "../common-middleware/auth"
+import user from "../db/models/user";
+config();
 
-export default class JWTController{
+export class JWTController{
 
-    public Verify:Function = (authorization)=>{
-        
-        if(authorization){
-            
-            return jwt.verify(authorization,process.env.ACCESS_SECRET,
-                (err,decoded)=>{
-                    if(decoded){
-                        return decoded;
-                    }else{
-                        return err;
+    private jwt = new JWT();
+
+    public getToken = async(req:express.Request,res:express.Response)=>{
+        const authorization = req.headers.authorization
+        if(!authorization){
+            res.status(400).json({data:null,message:"No accessToken contained in header"});
+        }else{
+            const data = this.jwt.Verify(authorization)
+            let userInfo = await user.findOne({
+                where:{
+                    id:data.id,
+                    user_id:data.user_id,
+                    email:data.email
+                }
+            })
+
+            if(!userInfo){
+                res.status(404).json({message:"access token has been tempered"});
+            }else{
+                res.status(200).json({
+                    data:{
+                        
                     }
-            });
+                })
+            }
         }
-    }
-
-    public getAccessToken:Function=(userInfo)=>{
-        const access_token = jwt.sign({
-            id:userInfo.id,
-            userId:userInfo.userId,
-            email:userInfo.email,
-            phone:userInfo.phone,
-            updatedAt:userInfo.updatedAt
-        },process.env.ACCESS_SECRET,{expiresIn:"1days"});
-        return access_token;
-    }
-
-    public getRefreshToken:Function=(userInfo)=>{
-        const refresh_token = jwt.sign({
-            id:userInfo.id,
-            userId:userInfo.userId,
-            email:userInfo.email,
-            phone:userInfo.phone
-        },process.env.REFRESH_SECRET,{expiresIn:"2days"});
-        return refresh_token;        
     }
 }

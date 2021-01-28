@@ -1,7 +1,7 @@
 import express from "express";
 import plan from "../db/models/my_plan";
 import schedule from "../db/models/plan_schedule";
-import JWT from "./jwt";
+import JWT from "../common-middleware/auth";
 export class PlanController {
     private authorization!:string;
     private jwt = new JWT();
@@ -9,8 +9,7 @@ export class PlanController {
     public getPlanList:Function = async (req:express.Request,res:express.Response)=>{
         this.authorization = req.body.authorization
         if(this.authorization){
-            let userId = await this.jwt.Verify(this.authorization).id;            
-
+            let userId = await this.jwt.Verify(this.authorization).id;
             await plan.findAll({
                 where:{
                     userId:userId
@@ -36,7 +35,7 @@ export class PlanController {
     public setPlan:Function = async(req:express.Request,res:express.Response)=>{
         const {body} = req;        
         const userInfo = this.jwt.Verify(body.authorization);
-
+        
         await plan.create({
             userId:userInfo.id,
             title:body.title
@@ -77,7 +76,6 @@ export class PlanController {
                 res.send(200)
             });
         }
-        
         return;
     }
 }

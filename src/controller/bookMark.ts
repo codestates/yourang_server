@@ -1,12 +1,12 @@
 import express from "express";
 import bookmarked from "../db/models/bookmarked_place";
-import JWT from "./jwt";
+import JWT from "../common-middleware/auth";
 export class BookMarkController {
     private jwt = new JWT();
     private userId!:string;
     private authorization!:string;
     
-    public getBookMarkList:Function = async (req:express.Request,res:express.Response)=>{                
+    public getBookMarkList:Function = async (req:express.Request,res:express.Response)=>{
         this.authorization = req.body.authorization;
         if(this.authorization){
             this.userId = this.jwt.Verify(this.authorization).id;
@@ -17,7 +17,7 @@ export class BookMarkController {
             }
         })
         .then((data)=>res.status(200).send(data))
-        .catch(err=>res.status(404).send(err));        
+        .catch(err=>res.status(404).send(err));
         return;
     }
     public setBookMark:Function = async (req:express.Request,res:express.Response)=>{

@@ -4,7 +4,8 @@ export const index = {
     my_plan:require("./plan"),
     category:require("./category"),
     bookmarked_place:require("./bookMark"),
-    map:require("./mapSearch")
+    map:require("./mapSearch"),
+    token:require("./jwt")
 };
 
 export default index

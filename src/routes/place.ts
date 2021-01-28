@@ -9,3 +9,4 @@ const api = new controller.place.PlaceController();
 router.get("/get",api.getPlace);
 //POST place/set
 router.post("/set",api.setPlace);
+//POST place/upload

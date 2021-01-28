@@ -1,9 +1,9 @@
-import dotenv from 'dotenv';
-dotenv.config();
 import {createServer} from 'https';
 import app from "./app";
 import {readFileSync} from "fs";
 import sequelize from "./db/database"
+import {config} from 'dotenv';
+config();
 
 
 const PORT = process.env.PORT;
