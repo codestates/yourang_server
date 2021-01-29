@@ -2,14 +2,13 @@ import express from "express";
 import plan from "../db/models/my_plan";
 import schedule from "../db/models/plan_schedule";
 import JWT from "../common-middleware/auth";
-export class PlanController {
-    private authorization!:string;
+export class PlanController {    
     private jwt = new JWT();
     //계획목록 가져오기
-    public getPlanList:Function = async (req:express.Request,res:express.Response)=>{
-        this.authorization = req.body.authorization
-        if(this.authorization){
-            let userId = await this.jwt.Verify(this.authorization).id;
+    public getPlanList:Function = async (req:any,res:express.Response)=>{
+        const authorization = req.headers.authorization;
+        if(authorization){
+            let userId = await this.jwt.Verify(authorization).id;
             await plan.findAll({
                 where:{
                     userId:userId
@@ -32,9 +31,10 @@ export class PlanController {
         return 
     }
     //계획 저장하기
-    public setPlan:Function = async(req:express.Request,res:express.Response)=>{
-        const {body} = req;        
-        const userInfo = this.jwt.Verify(body.authorization);
+    public setPlan:Function = async(req:any,res:express.Response)=>{
+        const {body} = req;
+        const authorization = req.headers.authorization;      
+        const userInfo = this.jwt.Verify(authorization);
         
         await plan.create({
             userId:userInfo.id,
@@ -59,8 +59,9 @@ export class PlanController {
     }
     
     //세부일정들 가져오기 = 계획보기
-    public getSchedules:Function = async (req:express.Request,res:express.Response)=>{
-        if(!req.body.authorization){
+    public getSchedules:Function = async (req:any,res:express.Response)=>{
+        const authorization = req.headers.authorization;
+        if(!authorization){
             res.redirect("https://localhost:3000/main")
         }else{
             await schedule.findAll({

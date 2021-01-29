@@ -12,8 +12,10 @@ router.post("/login",api.logIn);
 router.post("/logout",api.logOut);
 //POST user/signup
 router.post("/signup",api.signUp);
-//POST user/modify
-router.post("/modify",upload.single('image'),api.modifyUserInfo);
+//POST user/modify-profile
+router.post("/modify-profile",upload.single('image'),api.modifyProfile);
+//POST user/modify-pass
+router.post("/modify-pass",api.modifyPassword)
 //GET user/info
 router.get("/info",api.getUserInfo);
 //POST user/withdraw
