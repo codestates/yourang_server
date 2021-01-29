@@ -9,9 +9,10 @@ export class MapSearchController{
 
     public getPhotoForPlaces:Function = (req:express.Request,res:express.Response) => {
         const {place_ids} = req.body;
+        // console.log(req.body);
         
-        Promise.all(place_ids.map(async id=>{            
-            return await axios.get(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${id}&fields=name,rating,photo,formatted_phone_number&key=${this.GOOGLE_API}`)
+        Promise.all(place_ids.map(async id=>{
+            return await axios.get(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${id}&fields=geometry,name,rating,photo,formatted_phone_number,website,url,opening_hours&language=ko&key=${this.GOOGLE_API}`)
             .catch(err=>console.log(err));
         }))
         .then((values:any)=>{
@@ -32,8 +33,9 @@ export class MapSearchController{
     }
 
     public getLocation:Function = async (req:express.Request,res:express.Response) => {
-        const {lat,lng} =req.body;
-        await axios.get(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=1500&language=ko&type=tourist_attraction&key=${this.GOOGLE_API}`)
+        const {lat,lng} =req.body.data;
+        const placeType = req.body.placeType
+        await axios.get(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=1500&language=ko&type=${placeType}&key=${this.GOOGLE_API}`)
         .then(data=>{
             res.status(200).json(data.data.results);
         })
@@ -42,7 +44,7 @@ export class MapSearchController{
     }
     public getDetail:Function = async (req:express.Request,res:express.Response) => {
         const {placeId} = req.body;
-        await axios.get(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,rating,photo,formatted_phone_number&key=${this.GOOGLE_API}`)
+        await axios.get(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry,name,rating,photo,formatted_phone_number&key=${this.GOOGLE_API}`)
         .then(data=>{
             res.status(200).json(data.data);
         })
