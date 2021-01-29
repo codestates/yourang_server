@@ -7,7 +7,7 @@ export default class Auth{
         
         if(authorization){
             
-            return jwt.verify(authorization,process.env.ACCESS_SECRET,
+            return jwt.verify(authorization,process.env.REFRESH_SECRET,
                 (err,decoded)=>{
                     if(decoded){
                         return decoded;

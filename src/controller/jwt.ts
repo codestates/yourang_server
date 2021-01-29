@@ -8,8 +8,8 @@ export class JWTController{
 
     private jwt = new JWT();
 
-    public getToken = async(req:express.Request,res:express.Response)=>{
-        const authorization = req.headers.authorization?.split(" ")[1];
+    public getToken = async(req:any,res:express.Response)=>{
+        const authorization = req.headers.authorization;
         
         if(!authorization){
             res.status(400).json({data:null,message:"No accessToken contained in header"});

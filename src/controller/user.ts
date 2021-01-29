@@ -31,7 +31,7 @@ export class UserController {
         
         if(userInfo){
             const refresh_token = this.jwt.getRefreshToken(userInfo);
-            res.setHeader("authorization",`Bearer ${refresh_token}`);
+            res.setHeader("authorization",refresh_token);
             res.status(200).json({message:"Login Successed"});
         }else{
             res.status(400).json({message:"Invaild ID or Password"});
@@ -39,9 +39,9 @@ export class UserController {
         return;
     }
 
-    public logOut:Function = async (req:express.Request,res:express.Response)=>{
+    public logOut:Function = async (req:any,res:express.Response)=>{
         
-        const authorization = req.headers.authorization?.split(" ")[1];
+        const authorization = req.headers.authorization;
         
         if(authorization){
             res.flushHeaders
@@ -67,8 +67,8 @@ export class UserController {
         return;
     }
 
-    public getUserInfo:Function = async (req:express.Request,res:express.Response)=>{
-        const authorization = req.headers.authorization?.split(" ")[1];
+    public getUserInfo:Function = async (req:any,res:express.Response)=>{
+        const authorization = req.headers.authorization;
         
         if(authorization){
             let userInfo = this.jwt.Verify(authorization);
@@ -79,12 +79,14 @@ export class UserController {
         return;
     }
 
-    public modifyProfile:Function = async (req:any,res:express.Response)=>{
+    public modifyProfile:Function = async (req,res:express.Response)=>{
         const {file}=req
-        const authorization = req.headers.authorization?.split(" ")[1];
+        const authorization = req.headers.authorization;
+        
         let flag;
         if(authorization){
             let id = this.jwt.Verify(authorization).id;
+            console.log(id);
             let originPhoto;
             await user.findOne({
                 where:{
@@ -112,7 +114,7 @@ export class UserController {
                 }
             }).then((data)=>{
                 const refresh_token = this.jwt.getRefreshToken(data);
-                res.setHeader("authorization",`Bearer ${refresh_token}`);
+                res.setHeader("authorization",refresh_token);
                 res.cookie('refreshToken',refresh_token,{
                     httpOnly:true,
                     secure:true,
@@ -129,8 +131,8 @@ export class UserController {
         return;
     }
 
-    public modifyPassword:Function = async (req:express.Request,res:express.Response)=>{
-        const authorization = req.headers.authorization?.split(" ")[1];
+    public modifyPassword:Function = async (req:any,res:express.Response)=>{
+        const authorization = req.headers.authorization
         const {oriPassword,newPassword} = req.body;
         const id = this.jwt.Verify(authorization).id;
         if(id){
@@ -157,11 +159,11 @@ export class UserController {
             res.redirect("http://yourang.s3-website.ap-northeast-2.amazonaws.com/main")
         }
         return;
-        
     }
-    public withdraw:Function = async (req:express.Request,res:express.Response)=>{
+    
+    public withdraw:Function = async (req:any,res:express.Response)=>{
         const {password} = req.body;        
-        const authorization = req.headers.authorization?.split(" ")[1];
+        const authorization = req.headers.authorization;
         if(authorization){
             const asd = this.jwt.Verify(authorization);
             await user.destroy({
