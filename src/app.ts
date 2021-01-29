@@ -5,9 +5,7 @@ import router from "./routes"
 
 const app:express.Application = express();
 
-
-app.use(logger('dev'))
-app.use(express.json());
+app.use(logger('dev'));
 app.use(express.urlencoded({extended:false}));
 
 const corsOption : object ={
