@@ -39,9 +39,9 @@ export class UserController {
         return;
     }
 
-    public logOut:Function = async (req:any,res:express.Response)=>{
+    public logOut:Function = async (req:express.Request,res:express.Response)=>{
         
-        const authorization = req.headers.authorization.split(" ")[1];
+        const authorization = req.headers.authorization?.split(" ")[1];
         
         if(authorization){
             res.flushHeaders
@@ -67,21 +67,21 @@ export class UserController {
         return;
     }
 
-    public getUserInfo:Function = async (req:any,res:express.Response)=>{
-        const authorization = req.header.authorization.split(" ")[1];
+    public getUserInfo:Function = async (req:express.Request,res:express.Response)=>{
+        const authorization = req.headers.authorization?.split(" ")[1];
         
         if(authorization){
             let userInfo = this.jwt.Verify(authorization);
             res.status(200).json({data:userInfo});
         }else{
-            res.redirect("https://localhost:3000/main");
+            res.redirect("http://yourang.s3-website.ap-northeast-2.amazonaws.com/main");
         }
         return;
     }
 
-    public modifyUserInfo:Function = async (req:any,res:express.Response)=>{
-        const {body,file}=req
-        const authorization = req.header.authorization.split(" ")[1];
+    public modifyProfile:Function = async (req:any,res:express.Response)=>{
+        const {file}=req
+        const authorization = req.headers.authorization?.split(" ")[1];
         let flag;
         if(authorization){
             let id = this.jwt.Verify(authorization).id;
@@ -93,71 +93,75 @@ export class UserController {
             })
             .then((data:any)=>originPhoto=data.photo)
             .catch(err=>res.status(404).json({message:err}));
-            
-            if(body.password){
-                flag = await user.update({
-                    password:body.password,
-                    phone:body.phone,
-                    email:body.email,
-                    photo:file.location,
-                    updatedAt:this.date
-                },{
-                    where:{
-                        id:id
-                    }
-                })
-                .catch(err=>{
-                    this.delete(file.location);
-                    res.status(400).json({message:err});
-                });
+
+            //기존 프로필사진이 기본이미지가 아닐 때
+            if(originPhoto!=="src/image/photo.png"){
+                this.delete(originPhoto)
             }else{
-                flag = await user.update({
-                    phone:body.phone,
-                    email:body.email,
-                    photo:file.location,
-                    updatedAt:this.date
+                await user.update({
+                    photo:file.location
                 },{
                     where:{
                         id:id
                     }
-                })
-                .catch(err=>{
-                    this.delete(file.location);
-                    res.status(400).json({message:err});
-                });
+                }).catch(err=>res.status(400).json({message:err}));
             }
-            if(flag[0]){
-                await user.findOne({
-                    where:{
-                        id:id
-                    }
-                })
-                .then( (data)=>{
-                    //기존 프로필사진이 기본이미지가 아닐 때
-                    if(originPhoto!=="src/image/photo.png"){
-                        this.delete(originPhoto)
-                    }
-                    
-                    const refresh_token = this.jwt.getRefreshToken(data);
-                    res.setHeader("authorization",`Bearer ${refresh_token}`);
-                    res.cookie('refreshToken',refresh_token,{
-                        httpOnly:true,
-                        secure:true,
-                        sameSite:'none',
-                        domain:"localhost:3000",
-                        maxAge: 24*6*60*10000
-                    });
-                    res.status(200).json({message:"Successfully Modify"});
+            await user.findOne({
+                where:{
+                    id:id
+                }
+            }).then((data)=>{
+                const refresh_token = this.jwt.getRefreshToken(data);
+                res.setHeader("authorization",`Bearer ${refresh_token}`);
+                res.cookie('refreshToken',refresh_token,{
+                    httpOnly:true,
+                    secure:true,
+                    sameSite:'none',
+                    domain:"localhost:3000",
+                    maxAge: 24*6*60*10000
                 });
-            }
+                res.status(200).json({message:"Successfully Modify"});
+            })
+            .catch(err=>res.status(404).json({message:err}));
         }else{
-            res.redirect("https://localhost:3000/main");
+            res.redirect("http://yourang.s3-website.ap-northeast-2.amazonaws.com/main");
         }
         return;
     }
-    public withdraw:Function = async (req:any,res:express.Response)=>{
-        const {password} = req.body;
-        const authorization = req.header.authorization.split(" ")[1];
+
+    public modifyPassword:Function = async (req:express.Request,res:express.Response)=>{
+        const authorization = req.headers.authorization?.split(" ")[1];
+        const {oriPassword,newPassword} = req.body;
+        const id = this.jwt.Verify(authorization).id;
+        if(id){
+            await user.findOne({
+                where:{
+                    id:id,
+                    password:oriPassword
+                }
+            }).then( async ()=>{
+                await user.update({
+                    password:newPassword
+                },{
+                    where:{
+                        id:id,
+                        password:oriPassword
+                    }
+                })
+                .then(()=>res.status(200).json({message:"Modify Success!"}))
+                .catch((err)=>{res.status(404).json({message:err})});
+            })
+            .catch(err=>res.status(404).json({message:err}));
+        }else{
+            res.write({message:"Authorization is expired"});
+            res.redirect("http://yourang.s3-website.ap-northeast-2.amazonaws.com/main")
+        }
+        return;
+        
+    }
+    public withdraw:Function = async (req:express.Request,res:express.Response)=>{
+        const {password} = req.body;        
+        const authorization = req.headers.authorization?.split(" ")[1];
         if(authorization){
             const asd = this.jwt.Verify(authorization);
             await user.destroy({
@@ -174,7 +178,7 @@ export class UserController {
             .catch((err)=>res.status(400).json({message:err}));
             
         }else{
-            res.redirect("https://localhost:3000/main");
+            res.redirect("http://yourang.s3-website.ap-northeast-2.amazonaws.com/main");
         }
         
         return;
