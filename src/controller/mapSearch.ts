@@ -12,7 +12,7 @@ export class MapSearchController{
         // console.log(req.body);
         
         Promise.all(place_ids.map(async id=>{
-            return await axios.get(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${id}&fields=geometry,name,rating,photo,formatted_phone_number,website,url,opening_hours&language=ko&key=${this.GOOGLE_API}`)
+            return await axios.get(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${id}&fields=geometry,vicinity,price_level,adr_address,name,rating,photo,formatted_phone_number,website,url,opening_hours&language=ko&key=${this.GOOGLE_API}`)
             .catch(err=>console.log(err));
         }))
         .then((values:any)=>{
