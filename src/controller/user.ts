@@ -17,19 +17,18 @@ export class UserController {
                     this.now.getSeconds();
     
     public logIn:Function = async (req:express.Request,res:express.Response)=>{
+        const {id,password} = req.body;
         
-        let userInfo
         await user.findOne({
             where:{
-                user_id:req.body.id,
-                password:req.body.password
+                user_id:id,
+                password:password
             }
         })
         .then(data=>{
             if(data){
-                const refresh_token = this.jwt.getRefreshToken(userInfo);
-                res.setHeader("authorization",refresh_token);
-                res.status(200).json({message:"Login Successed"});
+                const refresh_token = this.jwt.getRefreshToken(data);                
+                res.status(200).json({message:"Login Successed",authorization:refresh_token});
             }
         })
         .catch(err=>res.status(400).json({message:"Invaild ID or Password",error:err}));
@@ -39,8 +38,7 @@ export class UserController {
     public logOut:Function = async (req:any,res:express.Response)=>{
         const authorization = req.headers.authorization;
         if(authorization){
-            res.setHeader("authorization","");
-            res.status(200).json({message:"Logout Success"});
+            res.status(200).json({message:"Logout Success",authorization:""});
         }else{
             res.status(400).json({message:"Bad Request"});
         }        
@@ -57,8 +55,7 @@ export class UserController {
             phone : body.phone,
         })
         .then(()=>{
-            res.status(200).write({message:"Signup Success"});
-            res.redirect("http://http://yourang.s3-website.ap-northeast-2.amazonaws.com/main");
+            res.status(200).json({message:"Signup Success"});
         })
         .catch((err)=>res.status(400).json({message:"Failed to Signup",error:err}));
         return;
@@ -130,8 +127,7 @@ export class UserController {
                 }
             }).then((data)=>{
                 const refresh_token = this.jwt.getRefreshToken(data);
-                res.setHeader("authorization",refresh_token);
-                res.status(200).json({message:"Successfully Modify"});
+                res.status(200).json({message:"Successfully Modify",authorization:refresh_token});
             })
             .catch(err=>res.status(404).json({message:err}));
         }else{
@@ -182,9 +178,8 @@ export class UserController {
                     password:password
                 }
             })
-            .then(()=>{
-                res.setHeader("authorization","");
-                res.status(200).json({message:"Withdraw Successful"});
+            .then(()=>{                
+                res.status(200).json({message:"Withdraw Successful",authorization:""});
             })
             .catch((err)=>res.status(400).json({message:err}));
             
