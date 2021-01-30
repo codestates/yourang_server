@@ -4,6 +4,7 @@ import bookmarked from "../db/models/bookmarked_place";
 import plan from "../db/models/my_plan"
 import JWT from "../common-middleware/auth";
 import Multer from "../common-middleware/multer";
+import axios from "axios";
 export class UserController {
     private delete = new Multer().getDeletePhoto;
     private jwt = new JWT();
@@ -25,30 +26,23 @@ export class UserController {
             }
         })
         .then(data=>{
-            userInfo=data
+            if(data){
+                const refresh_token = this.jwt.getRefreshToken(userInfo);
+                res.setHeader("authorization",refresh_token);
+                res.status(200).json({message:"Login Successed"});
+            }
         })
         .catch(err=>res.status(400).json({message:"Invaild ID or Password",error:err}));
-        
-        if(userInfo){
-            const refresh_token = this.jwt.getRefreshToken(userInfo);
-            res.setHeader("authorization",refresh_token);
-            res.status(200).json({message:"Login Successed"});
-        }else{
-            res.status(400).json({message:"Invaild ID or Password"});
-        }
         return;
     }
 
     public logOut:Function = async (req:any,res:express.Response)=>{
-        
         const authorization = req.headers.authorization;
-        
         if(authorization){
-            res.flushHeaders
             res.setHeader("authorization","");
             res.status(200).json({message:"Logout Success"});
         }else{
-            res.status(400).json({message:"Bad Request"})
+            res.status(400).json({message:"Bad Request"});
         }        
         return;
     }
@@ -62,8 +56,11 @@ export class UserController {
             photo : "src/image/photo.png",
             phone : body.phone,
         })
-        .then(()=>res.status(200).json({message:"Signup Success"}))
-        .catch((err)=>res.status(400).json({message:"Failed to Signup"}));
+        .then(()=>{
+            res.status(200).write({message:"Signup Success"});
+            res.redirect("http://http://yourang.s3-website.ap-northeast-2.amazonaws.com/main");
+        })
+        .catch((err)=>res.status(400).json({message:"Failed to Signup",error:err}));
         return;
     }
 
@@ -72,21 +69,33 @@ export class UserController {
         
         if(authorization){
             let userInfo = this.jwt.Verify(authorization);
-            res.status(200).json({data:userInfo});
+            await user.findOne({
+                where:{
+                    id:userInfo.id
+                }
+            })
+            .then((data)=>{
+                if(data){
+                    res.status(200).json({data});
+                }
+            })
+            .catch(err=>{
+                res.status(400).json({message:"Invalid authorization",error:err});
+            })
         }else{
-            res.redirect("http://yourang.s3-website.ap-northeast-2.amazonaws.com/main");
+            res.status(400).json({message:"Invalid authorization"});
         }
         return;
     }
 
-    public modifyProfile:Function = async (req,res:express.Response)=>{
+    public modifyPhoto:Function = async (req,res:express.Response)=>{
         const {file}=req
         const authorization = req.headers.authorization;
         
         let flag;
         if(authorization){
             let id = this.jwt.Verify(authorization).id;
-            console.log(id);
+            
             let originPhoto;
             await user.findOne({
                 where:{
@@ -94,11 +103,15 @@ export class UserController {
                 }
             })
             .then((data:any)=>originPhoto=data.photo)
-            .catch(err=>res.status(404).json({message:err}));
-
+            .catch(err=>{
+                res.status(400).json({message:"Invalid Authorization",error:err});
+                return;
+            });
+            
             //기존 프로필사진이 기본이미지가 아닐 때
             if(originPhoto!=="src/image/photo.png"){
-                this.delete(originPhoto)
+                let deleted = this.delete(originPhoto);
+                
             }else{
                 await user.update({
                     photo:file.location
@@ -106,7 +119,10 @@ export class UserController {
                     where:{
                         id:id
                     }
-                }).catch(err=>res.status(400).json({message:err}));
+                }).catch(err=>{
+                    res.status(400).json({message:err});
+                    return;
+                });
             }
             await user.findOne({
                 where:{
@@ -115,13 +131,6 @@ export class UserController {
             }).then((data)=>{
                 const refresh_token = this.jwt.getRefreshToken(data);
                 res.setHeader("authorization",refresh_token);
-                res.cookie('refreshToken',refresh_token,{
-                    httpOnly:true,
-                    secure:true,
-                    sameSite:'none',
-                    domain:"localhost:3000",
-                    maxAge: 24*6*60*10000
-                });
                 res.status(200).json({message:"Successfully Modify"});
             })
             .catch(err=>res.status(404).json({message:err}));
@@ -162,7 +171,7 @@ export class UserController {
     }
     
     public withdraw:Function = async (req:any,res:express.Response)=>{
-        const {password} = req.body;        
+        const {password} = req.body;
         const authorization = req.headers.authorization;
         if(authorization){
             const asd = this.jwt.Verify(authorization);
@@ -174,8 +183,8 @@ export class UserController {
                 }
             })
             .then(()=>{
-                res.cookie('maxAge',0);
-                res.status(200).json({message:"Withdraw Successful"})
+                res.setHeader("authorization","");
+                res.status(200).json({message:"Withdraw Successful"});
             })
             .catch((err)=>res.status(400).json({message:err}));
             
