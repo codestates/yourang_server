@@ -229,10 +229,15 @@ export class UserController {
 
     public loginAuthorization:Function = async(req,res:express.Response)=>{
         const authorization = req.headers.authorization
-        const id = this.jwt.Verify(authorization)["id"];
+        console.log(authorization);
+        const {id,user_id,phone,photo,email} = this.jwt.Verify(authorization);
         await user.findOne({
             where:{
-                id:id
+                id:id,
+                user_id:user_id,
+                phone:phone,
+                photo:photo,
+                email:email
             }
         }).then(data=>{
             if(data){
