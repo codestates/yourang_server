@@ -3,7 +3,6 @@ import category from "../db/models//category";
 export class CategoryController {
     
     public getCategory:Function = async(req:express.Request,res:express.Response)=>{
-        console.log("시작");        
         await category.findOne({
             where:{
                 id:req.body.id

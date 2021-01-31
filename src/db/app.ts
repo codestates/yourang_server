@@ -2,7 +2,7 @@ import sequlize from "./database";
 import express from "express";
 
 const app = express()
-
+console.log(sequlize)
 app.listen(8080, ()=>{  
   sequlize.authenticate().then( async ()=>{    
     try{

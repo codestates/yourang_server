@@ -19,9 +19,9 @@ export class MapSearchController{
             Promise.all(values.map(async (val)=>{
                 
                 if(val.data.result.photos){
-                    let datas = await this.getPhoto(val,400);                    
+                    let datas = await this.getPhoto(val,400);
                     return datas;
-                }else{                    
+                }else{
                     return {detail:val.data,photoUrl:0}
                 }
             })).then((datas:any)=>res.status(200).json(datas))
@@ -59,26 +59,4 @@ export class MapSearchController{
         })
         .catch(err=>console.log(err));
     }
-
-    public getPhotos:Function = async (req:express.Request,res:express.Response) => {
-        const {photos} = req.body;
-        let urls:any= [];
-        await photos.forEach(async photo=>{
-            let {photo_reference} = photo;
-            let maxwidth = 400;
-            await axios.get(`https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxwidth}&photoreference=${photo_reference}&key=${this.GOOGLE_API}`)
-            .then(data=>{
-                urls.push(data.config.url);
-            })
-            .catch(err=>console.log(err));
-        });
-        if(urls.length){
-            res.status(200).send({data:urls});
-        }else{
-            res.status(400).send({message:"Error occured"});
-        }
-    }
-
-    
-    
 }

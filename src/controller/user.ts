@@ -29,6 +29,8 @@ export class UserController {
             if(data){
                 const refresh_token = this.jwt.getRefreshToken(data);                
                 res.status(200).json({message:"Login Successed",authorization:refresh_token});
+            }else{
+                res.status(400).json({message:"Invaild ID or Password"});
             }
         })
         .catch(err=>res.status(400).json({message:"Invaild ID or Password",error:err}));
@@ -47,17 +49,28 @@ export class UserController {
 
     public signUp:Function = async (req:express.Request,res:express.Response)=>{
         const {body} = req;
-        await user.create({
-            user_id : body.id,
-            password : body.password,
-            email : body.email,
-            photo : "src/image/photo.png",
-            phone : body.phone,
+        await user.findOne({
+            where:{
+                user_id : body.id
+            }
         })
-        .then(()=>{
-            res.status(200).json({message:"Signup Success"});
+        .then( async data=>{
+            if(data){
+                res.status(404).json({message:"Already exist"})
+            }else{
+                await user.create({
+                    user_id : body.id,
+                    password : body.password,
+                    email : body.email,
+                    photo : "src/image/photo.png",
+                    phone : body.phone,
+                })
+                .then(()=>{
+                    res.status(200).json({message:"Signup Success"});
+                })
+                .catch((err)=>res.status(400).json({message:"Failed to Signup",error:err}));
+            }
         })
-        .catch((err)=>res.status(400).json({message:"Failed to Signup",error:err}));
         return;
     }
 
@@ -104,11 +117,9 @@ export class UserController {
                 res.status(400).json({message:"Invalid Authorization",error:err});
                 return;
             });
-            console.log(file.location)
             //기존 프로필사진이 기본이미지가 아닐 때
             if(originPhoto!=="src/image/photo.png"){
                 let deleted = this.delete(originPhoto);
-                
             }
             await user.update({
                 photo:file.location

@@ -29,11 +29,12 @@ export default class Multer{
         return upload
    }
 
-    public getDeletePhoto = (key)=>{
-        key = key.split("/");
+    public getDeletePhoto = (key:string)=>{
+        let filename = key.split("/");
+        
         const param = {
             Bucket : process.env.AWS_BUCKET_NAME+"/user_profile",
-            Key : key[key.length-1]
+            Key : filename[filename.length-1]
         }
         this.S3.deleteObject(param,(err,data)=>{
             if(err) return err
