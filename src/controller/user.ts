@@ -39,11 +39,15 @@ export class UserController {
 
     public logOut:Function = async (req:any,res:express.Response)=>{
         const authorization = req.headers.authorization;
+        
         if(authorization){
-            res.status(200).json({message:"Logout Success",authorization:""});
-        }else{
-            res.status(400).json({message:"Bad Request"});
-        }        
+            const id = this.jwt.Verify(authorization);
+            await user.findOne({
+                where:{
+                    id:id
+                }
+            }).then(()=>res.redirect("http://localhost:3000"))
+        }   
         return;
     }
 
@@ -228,8 +232,8 @@ export class UserController {
     }
 
     public loginAuthorization:Function = async(req,res:express.Response)=>{
+        
         const authorization = req.headers.authorization
-        console.log(authorization);
         const {id,user_id,phone,photo,email} = this.jwt.Verify(authorization);
         await user.findOne({
             where:{

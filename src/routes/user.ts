@@ -25,8 +25,8 @@ router.post("/check_id",api.checkId);
 //POST user/check_email
 router.post("/check_email",api.checkEmail);
 //POST user/auth
-router.post("auth",api.loginAuthorization);
+router.post("/auth",api.loginAuthorization);
 //POST user/token
-router.post("token",token.getToken);
+router.post("/token",token.getToken);
 
 
