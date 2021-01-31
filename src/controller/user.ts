@@ -104,23 +104,22 @@ export class UserController {
                 res.status(400).json({message:"Invalid Authorization",error:err});
                 return;
             });
-            
+            console.log(file.location)
             //기존 프로필사진이 기본이미지가 아닐 때
             if(originPhoto!=="src/image/photo.png"){
                 let deleted = this.delete(originPhoto);
                 
-            }else{
-                await user.update({
-                    photo:file.location
-                },{
-                    where:{
-                        id:id
-                    }
-                }).catch(err=>{
-                    res.status(400).json({message:err});
-                    return;
-                });
             }
+            await user.update({
+                photo:file.location
+            },{
+                where:{
+                    id:id
+                }
+            }).catch(err=>{
+                res.status(400).json({message:err});
+                return;
+            });
             await user.findOne({
                 where:{
                     id:id
@@ -131,7 +130,7 @@ export class UserController {
             })
             .catch(err=>res.status(404).json({message:err}));
         }else{
-            res.redirect("http://yourang.s3-website.ap-northeast-2.amazonaws.com/main");
+            res.redirect("http://yourang.s3-website.ap-northeast-2.amazonaws.com/main")
         }
         return;
     }
@@ -160,7 +159,6 @@ export class UserController {
             })
             .catch(err=>res.status(404).json({message:err}));
         }else{
-            res.write({message:"Authorization is expired"});
             res.redirect("http://yourang.s3-website.ap-northeast-2.amazonaws.com/main")
         }
         return;

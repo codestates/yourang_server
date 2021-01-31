@@ -20,9 +20,6 @@ export default class Multer{
                 acl:"public-read",
                 cacheControl: "max-age=31536000",
                 contentType: multerS3.AUTO_CONTENT_TYPE,
-                metadata:(req,file,cb)=>{
-                    cb(null,{fieldName:file.fieldname});
-                },
                 key: (req,file,cb)=>{
                     cb(null,Date.now().toString())
                 },
