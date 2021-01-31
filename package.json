@@ -8,7 +8,7 @@
       "test": "echo \"Error: no test specified\" && exit 1",
       "start-pm2": "pm2-dev --interpreter ./node_modules/.bin/ts-node ./index.ts",
       "start": "nodemon --require ts-node index.ts",
-      "db-test": "node ./src/db/app.ts"
+      "db-test": "node --require ts-node ./src/db/app.ts"
    },
    "repository": {
       "type": "git",

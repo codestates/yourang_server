@@ -29,6 +29,8 @@ export class UserController {
             if(data){
                 const refresh_token = this.jwt.getRefreshToken(data);                
                 res.status(200).json({message:"Login Successed",authorization:refresh_token});
+            }else{
+                res.status(400).json({message:"Invaild ID or Password"});
             }
         })
         .catch(err=>res.status(400).json({message:"Invaild ID or Password",error:err}));
@@ -37,27 +39,42 @@ export class UserController {
 
     public logOut:Function = async (req:any,res:express.Response)=>{
         const authorization = req.headers.authorization;
+        
         if(authorization){
-            res.status(200).json({message:"Logout Success",authorization:""});
-        }else{
-            res.status(400).json({message:"Bad Request"});
-        }        
+            const id = this.jwt.Verify(authorization);
+            await user.findOne({
+                where:{
+                    id:id
+                }
+            }).then(()=>res.redirect("http://localhost:3000"))
+        }   
         return;
     }
 
     public signUp:Function = async (req:express.Request,res:express.Response)=>{
         const {body} = req;
-        await user.create({
-            user_id : body.id,
-            password : body.password,
-            email : body.email,
-            photo : "src/image/photo.png",
-            phone : body.phone,
+        await user.findOne({
+            where:{
+                user_id : body.id
+            }
         })
-        .then(()=>{
-            res.status(200).json({message:"Signup Success"});
+        .then( async data=>{
+            if(data){
+                res.status(404).json({message:"Already exist"})
+            }else{
+                await user.create({
+                    user_id : body.id,
+                    password : body.password,
+                    email : body.email,
+                    photo : "src/image/photo.png",
+                    phone : body.phone,
+                })
+                .then(()=>{
+                    res.status(200).json({message:"Signup Success"});
+                })
+                .catch((err)=>res.status(400).json({message:"Failed to Signup",error:err}));
+            }
         })
-        .catch((err)=>res.status(400).json({message:"Failed to Signup",error:err}));
         return;
     }
 
@@ -104,23 +121,20 @@ export class UserController {
                 res.status(400).json({message:"Invalid Authorization",error:err});
                 return;
             });
-            
             //기존 프로필사진이 기본이미지가 아닐 때
             if(originPhoto!=="src/image/photo.png"){
                 let deleted = this.delete(originPhoto);
-                
-            }else{
-                await user.update({
-                    photo:file.location
-                },{
-                    where:{
-                        id:id
-                    }
-                }).catch(err=>{
-                    res.status(400).json({message:err});
-                    return;
-                });
             }
+            await user.update({
+                photo:file.location
+            },{
+                where:{
+                    id:id
+                }
+            }).catch(err=>{
+                res.status(400).json({message:err});
+                return;
+            });
             await user.findOne({
                 where:{
                     id:id
@@ -131,7 +145,7 @@ export class UserController {
             })
             .catch(err=>res.status(404).json({message:err}));
         }else{
-            res.redirect("http://yourang.s3-website.ap-northeast-2.amazonaws.com/main");
+            res.redirect("http://yourang.s3-website.ap-northeast-2.amazonaws.com/main")
         }
         return;
     }
@@ -160,7 +174,6 @@ export class UserController {
             })
             .catch(err=>res.status(404).json({message:err}));
         }else{
-            res.write({message:"Authorization is expired"});
             res.redirect("http://yourang.s3-website.ap-northeast-2.amazonaws.com/main")
         }
         return;
@@ -215,6 +228,29 @@ export class UserController {
             .then((data)=>(data)?res.status(202).json({result:true}):res.status(202).json({result:false}))
             .catch(err=>res.status(400).json({message:err}));
         }
+        return;
+    }
+
+    public loginAuthorization:Function = async(req,res:express.Response)=>{
+        
+        const authorization = req.headers.authorization
+        const {id,user_id,phone,photo,email} = this.jwt.Verify(authorization);
+        await user.findOne({
+            where:{
+                id:id,
+                user_id:user_id,
+                phone:phone,
+                photo:photo,
+                email:email
+            }
+        }).then(data=>{
+            if(data){
+                res.status(200).json({message:true});
+            }else{
+                res.status(404).json({message:false});
+            }
+        })
+        .catch(err=>res.status(400).json({error:err}));
         return;
     }
 }

@@ -20,9 +20,6 @@ export default class Multer{
                 acl:"public-read",
                 cacheControl: "max-age=31536000",
                 contentType: multerS3.AUTO_CONTENT_TYPE,
-                metadata:(req,file,cb)=>{
-                    cb(null,{fieldName:file.fieldname});
-                },
                 key: (req,file,cb)=>{
                     cb(null,Date.now().toString())
                 },
@@ -32,11 +29,12 @@ export default class Multer{
         return upload
    }
 
-    public getDeletePhoto = (key)=>{
-        key = key.split("/");
+    public getDeletePhoto = (key:string)=>{
+        let filename = key.split("/");
+        
         const param = {
             Bucket : process.env.AWS_BUCKET_NAME+"/user_profile",
-            Key : key[key.length-1]
+            Key : filename[filename.length-1]
         }
         this.S3.deleteObject(param,(err,data)=>{
             if(err) return err

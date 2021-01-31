@@ -62,7 +62,7 @@ export class PlanController {
     public getSchedules:Function = async (req:any,res:express.Response)=>{
         const authorization = req.headers.authorization;
         if(!authorization){
-            res.redirect("https://localhost:3000/main")
+            res.redirect("https://:3000/main")
         }else{
             await schedule.findAll({
                 where:{
