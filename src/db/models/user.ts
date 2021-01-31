@@ -1,4 +1,4 @@
-import {Model,AllowNull, AutoIncrement, Column, NotEmpty, PrimaryKey, Table, HasMany, UpdatedAt, CreatedAt} from 'sequelize-typescript'
+import {Model,AllowNull, AutoIncrement, Column, NotEmpty, PrimaryKey, Table, HasMany, UpdatedAt, CreatedAt, Not, Unique} from 'sequelize-typescript'
 import Bookmarked_place from './bookmarked_place';
 import Myplan from './my_plan';
 export interface User1{
@@ -23,7 +23,8 @@ export default class User extends Model implements User1{
 
     @AllowNull(false)
     @NotEmpty
-    @Column    
+    @Unique
+    @Column
     user_id!: string;
 
     @AllowNull(false)
@@ -36,10 +37,13 @@ export default class User extends Model implements User1{
     @Column
     email!: string;
 
+    @Column
+    phone!: string;
+
     @AllowNull(false)
     @NotEmpty
     @Column
-    phone!: string;
+    photo!: string;
     
     @CreatedAt    
     createdAt!: Date;

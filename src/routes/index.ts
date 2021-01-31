@@ -1,10 +1,9 @@
 const index = {
     user:require("./user"),
     place:require("./place"),
-    schedule:require("./plan_schedule"),
-    category:require("./category"),
     plan:require("./my_plan"),
-    bookmark:require("./bookmarked_place")
+    bookmark:require("./bookmarked_place"),
+    google:require("./google")
 }
 
 export default index;

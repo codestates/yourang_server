@@ -1,10 +1,13 @@
-import axios from "axios";
 import express from "express";
 import user from "../db/models/user";
-const jwt = require("jsonwebtoken");
-
+import bookmarked from "../db/models/bookmarked_place";
+import plan from "../db/models/my_plan"
+import JWT from "../common-middleware/auth";
+import Multer from "../common-middleware/multer";
+import axios from "axios";
 export class UserController {
-    
+    private delete = new Multer().getDeletePhoto;
+    private jwt = new JWT();
     private now:Date = new Date();
     private date:string = this.now.getFullYear()+"-"+
                     (this.now.getMonth()+1)+"-"+
@@ -12,160 +15,242 @@ export class UserController {
                     this.now.getHours()+":"+
                     this.now.getMinutes()+":"+
                     this.now.getSeconds();
-    public getAccessToken:Function = (userInfo)=>{
-        const access_token = jwt.sign({
-            id:userInfo.id,
-            userId:userInfo.userId,
-            email:userInfo.email,
-            phone:userInfo.phone
-        },process.env.ACCESS_SECRET,{expiresIn:"1days"});
+    
+    public logIn:Function = async (req:express.Request,res:express.Response)=>{
+        const {id,password} = req.body;
         
-        return access_token;
-    }
-    public getRefreshToken:Function = (userInfo)=>{
-        
-        const refresh_token = jwt.sign({
-            id:userInfo.id,
-            userId:userInfo.userId,
-            email:userInfo.email,
-            phone:userInfo.phone
-        },process.env.REFRESH_SECRET,{expiresIn:"2days"});
-        return refresh_token;
-    }
-
-    public logIn:Function = async (req:express.Request,res:express.Response):Promise<any>=>{
-        
-        let userInfo
         await user.findOne({
             where:{
-                user_id:req.body.id,
-                password:req.body.password
+                user_id:id,
+                password:password
             }
         })
         .then(data=>{
-            userInfo=data
+            if(data){
+                const refresh_token = this.jwt.getRefreshToken(data);                
+                res.status(200).json({message:"Login Successed",authorization:refresh_token});
+            }else{
+                res.status(400).json({message:"Invaild ID or Password"});
+            }
         })
-        .catch(err=>res.status(404).send({message:err}));
-        
-        if(!userInfo){
-            res.status(400).send({data:null,message:"Invaild ID or Password"});
-        }else{            
-            const access_token = this.getAccessToken(userInfo);
-            const refresh_token = this.getRefreshToken(userInfo);
-            res.cookie('refreshToken',refresh_token,{
-                httpOnly:true,
-                secure:true,
-                sameSite:'none',
-                domain:"localhost:3000",
-                maxAge: 24*6*60*10000
-            });
-            res.status(200).send({data:{accessToken:access_token},message:"ok"});
-        }
+        .catch(err=>res.status(400).json({message:"Invaild ID or Password",error:err}));
         return;
     }
 
-    public logOut:Function = async (req:express.Request,res:express.Response)=>{
-        const authorization = req.body.authorization;
+    public logOut:Function = async (req:any,res:express.Response)=>{
+        const authorization = req.headers.authorization;
         
-        (authorization)?res.cookie('maxAge',0):
-            
-        res.status(200).send("Logout Success");
-        
+        if(authorization){
+            const id = this.jwt.Verify(authorization);
+            await user.findOne({
+                where:{
+                    id:id
+                }
+            }).then(()=>res.redirect("http://localhost:3000"))
+        }   
         return;
     }
 
     public signUp:Function = async (req:express.Request,res:express.Response)=>{
         const {body} = req;
-        await user.create({
-            user_id : body.userId,
-            password : body.password,
-            email : body.email,
-            phone : body.phone,            
+        await user.findOne({
+            where:{
+                user_id : body.id
+            }
         })
-        .then(()=>res.status(200).send("Signup Successful"))
-        .catch((err)=>res.status(404).send("Failed to Signup"));
+        .then( async data=>{
+            if(data){
+                res.status(404).json({message:"Already exist"})
+            }else{
+                await user.create({
+                    user_id : body.id,
+                    password : body.password,
+                    email : body.email,
+                    photo : "src/image/photo.png",
+                    phone : body.phone,
+                })
+                .then(()=>{
+                    res.status(200).json({message:"Signup Success"});
+                })
+                .catch((err)=>res.status(400).json({message:"Failed to Signup",error:err}));
+            }
+        })
         return;
     }
 
-    public getUserInfo:Function = async (req:express.Request,res:express.Response)=>{
-        const authorization = req.body.authorization;
+    public getUserInfo:Function = async (req:any,res:express.Response)=>{
+        const authorization = req.headers.authorization;
+        
         if(authorization){
-            jwt.verify(authorization,process.env.ACCESS_SECRET,
-                async (err,decoded)=>{
-                    err?res.status(403).send(err):res.status(200).send(decoded);
+            let userInfo = this.jwt.Verify(authorization);
+            await user.findOne({
+                where:{
+                    id:userInfo.id
                 }
-            );
+            })
+            .then((data)=>{
+                if(data){
+                    res.status(200).json({data});
+                }
+            })
+            .catch(err=>{
+                res.status(400).json({message:"Invalid authorization",error:err});
+            })
         }else{
-            res.status(404).redirect("")
+            res.status(400).json({message:"Invalid authorization"});
         }
         return;
     }
 
-    public modifyUserInfo:Function = async (req:express.Request,res:express.Response)=>{
-        const {body}=req
+    public modifyPhoto:Function = async (req,res:express.Response)=>{
+        const {file}=req
+        const authorization = req.headers.authorization;
+        
         let flag;
-        if(body.authorization){
-            let id;
-            await jwt.verify(body.authorization,process.env.ACCESS_SECRET,(err,decoded)=>{
-                id=decoded.id
+        if(authorization){
+            let id = this.jwt.Verify(authorization).id;
+            
+            let originPhoto;
+            await user.findOne({
+                where:{
+                    id:id
+                }
+            })
+            .then((data:any)=>originPhoto=data.photo)
+            .catch(err=>{
+                res.status(400).json({message:"Invalid Authorization",error:err});
+                return;
             });
-            if(body.password){
-                flag = await user.update({
-                    password:body.password,
-                    phone:body.phone,
-                    email:body.email,
-                    updatedAt:this.date
-                },{
-                    where:{
-                        id:id
-                    }
-                })
-                .catch(err=>res.status(500).send(err));
-            }else{
-                flag = await user.update({
-                    phone:body.phone,
-                    email:body.email,
-                    updatedAt:this.date
-                },{
-                    where:{
-                        id:id
-                    }
-                })
+            //기존 프로필사진이 기본이미지가 아닐 때
+            if(originPhoto!=="src/image/photo.png"){
+                let deleted = this.delete(originPhoto);
             }
-            if(flag[0]){
-                await user.findOne({
-                    where:{
-                        id:id
-                    }
-                })
-                .then( (data)=>{
-                    const access_token = this.getAccessToken(data);
-                    const refresh_token = this.getRefreshToken(data);
-                    res.cookie('refreshToken',refresh_token,{
-                        httpOnly:true,
-                        secure:true,
-                        sameSite:'none',
-                        domain:"localhost:3000",
-                        maxAge: 24*6*60*10000
-                    });
-                    res.status(200).send({data:{accessToken:access_token},message:"ok"});
-                    return;
-                });
-            }
+            await user.update({
+                photo:file.location
+            },{
+                where:{
+                    id:id
+                }
+            }).catch(err=>{
+                res.status(400).json({message:err});
+                return;
+            });
+            await user.findOne({
+                where:{
+                    id:id
+                }
+            }).then((data)=>{
+                const refresh_token = this.jwt.getRefreshToken(data);
+                res.status(200).json({message:"Successfully Modify",authorization:refresh_token});
+            })
+            .catch(err=>res.status(404).json({message:err}));
         }else{
-            res.status(404).send("Should Login");
-            return;
-        }        
+            res.redirect("http://yourang.s3-website.ap-northeast-2.amazonaws.com/main")
+        }
+        return;
     }
-    public withdraw:Function = async (req:express.Request,res:express.Response)=>{
-        await user.destroy({
+
+    public modifyPassword:Function = async (req:any,res:express.Response)=>{
+        const authorization = req.headers.authorization
+        const {oriPassword,newPassword} = req.body;
+        const id = this.jwt.Verify(authorization).id;
+        if(id){
+            await user.findOne({
+                where:{
+                    id:id,
+                    password:oriPassword
+                }
+            }).then( async ()=>{
+                await user.update({
+                    password:newPassword
+                },{
+                    where:{
+                        id:id,
+                        password:oriPassword
+                    }
+                })
+                .then(()=>res.status(200).json({message:"Modify Success!"}))
+                .catch((err)=>{res.status(404).json({message:err})});
+            })
+            .catch(err=>res.status(404).json({message:err}));
+        }else{
+            res.redirect("http://yourang.s3-website.ap-northeast-2.amazonaws.com/main")
+        }
+        return;
+    }
+    
+    public withdraw:Function = async (req:any,res:express.Response)=>{
+        const {password} = req.body;
+        const authorization = req.headers.authorization;
+        if(authorization){
+            const asd = this.jwt.Verify(authorization);
+            await user.destroy({
+                where:{
+                    id:asd.id,
+                    user_id:asd.user_id,
+                    password:password
+                }
+            })
+            .then(()=>{                
+                res.status(200).json({message:"Withdraw Successful",authorization:""});
+            })
+            .catch((err)=>res.status(400).json({message:err}));
+            
+        }else{
+            res.redirect("http://yourang.s3-website.ap-northeast-2.amazonaws.com/main");
+        }
+        
+        return;
+    }
+
+    public checkId:Function = async(req:express.Request,res:express.Response)=>{
+        const {id} = req.body;
+        
+        if(id){
+            await user.findOne({
+                where:{
+                    user_id:id
+                }
+            })
+            .then((data)=>(data)?res.status(202).json({result:true}):res.status(202).json({result:false}))
+            .catch(err=>res.status(400).json({message:err}));
+        }
+        return;
+    }
+    public checkEmail:Function = async(req:express.Request,res:express.Response)=>{
+        const {email} = req.body
+        if(email){
+            await user.findOne({
+                where:{
+                    email:email
+                }
+            })
+            .then((data)=>(data)?res.status(202).json({result:true}):res.status(202).json({result:false}))
+            .catch(err=>res.status(400).json({message:err}));
+        }
+        return;
+    }
+
+    public loginAuthorization:Function = async(req,res:express.Response)=>{
+        
+        const authorization = req.headers.authorization
+        const {id,user_id,phone,photo,email} = this.jwt.Verify(authorization);
+        await user.findOne({
             where:{
-                user_id:req.body.user_id,
-                password:req.body.password
+                id:id,
+                user_id:user_id,
+                phone:phone,
+                photo:photo,
+                email:email
+            }
+        }).then(data=>{
+            if(data){
+                res.status(200).json({message:true});
+            }else{
+                res.status(404).json({message:false});
             }
         })
-        .then(()=>res.status(200).send("Withdraw Successful"))
-        .catch((err)=>res.status(400).send(err));
+        .catch(err=>res.status(400).json({error:err}));
         return;
     }
 }

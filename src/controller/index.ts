@@ -1,10 +1,10 @@
 export const index = {
     user: require("./user"),
-    place: require("./place"),
-    plan_schedule:require("./schedule"),
-    my_plan:require("./plan"),
-    category:require("./category"),
-    bookmarked_place:require("./bookMark")    
+    place: require("./place"),    
+    my_plan:require("./plan"),    
+    bookmarked_place:require("./bookMark"),
+    map:require("./mapSearch"),
+    token:require("./jwt")
 };
 
 export default index
