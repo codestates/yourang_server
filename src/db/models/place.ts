@@ -1,10 +1,9 @@
 import {AllowNull, AutoIncrement, Column, CreatedAt, ForeignKey, HasMany, Model, NotEmpty, PrimaryKey, Table, UpdatedAt} from 'sequelize-typescript';
-import Category from "./category";
+
 import BookMarked_Place from "./bookmarked_place";
 import Plan_Schedule from "./plan_schedule"
 export interface Place{
-    id?: number | null
-    category_Id: number
+    id?: number | null    
     place_name: string
     address : string
     number : string
@@ -26,12 +25,6 @@ export default class Places extends Model implements Place{
     @AutoIncrement
     @Column
     id?: number;
-
-    @ForeignKey(()=>Category)
-    @AllowNull(false)
-    @NotEmpty
-    @Column
-    category_Id!:number;
 
     @AllowNull(false)
     @NotEmpty

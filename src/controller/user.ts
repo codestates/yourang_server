@@ -226,4 +226,22 @@ export class UserController {
         }
         return;
     }
+
+    public loginAuthorization:Function = async(req,res:express.Response)=>{
+        const authorization = req.headers.authorization
+        const id = this.jwt.Verify(authorization)["id"];
+        await user.findOne({
+            where:{
+                id:id
+            }
+        }).then(data=>{
+            if(data){
+                res.status(200).json({message:true});
+            }else{
+                res.status(404).json({message:false});
+            }
+        })
+        .catch(err=>res.status(400).json({error:err}));
+        return;
+    }
 }
